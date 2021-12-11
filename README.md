@@ -28,8 +28,54 @@ Main project that contains game itself.
 
 > main.py
 
-Entry point
+Entry point; Startup animation.
 
 > screens.py
 
-File containing main and game frames
+Main and game frames
+
+> .user & .user2
+
+User data (to change user, set 'SECOND_USER' env variable).
+
+> consts.py
+
+Backend url and symbols for game.
+
+> gameboard.py
+
+Proxy between a screen and game source. Contains all checks for pieces.
+
+> sources.py
+
+Games sources:
+
+- **LocalSource** (PvP on the computer)
+- **LocalAISource** (PvE on the computer)
+- **RemoteSource** (PvP on remote)
+
+> utils.py
+
+**calculate_yx** — converter between user input and array accessors.
+
+### backend
+
+> main.py
+
+Entry point; run with unicorn.
+
+> models.py
+
+Database models.
+
+> schemas.py
+
+Pydantic classes for requests.
+
+> database.py
+
+Database connector.
+
+> crud.py
+
+All the CRUD operations.

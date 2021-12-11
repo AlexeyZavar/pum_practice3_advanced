@@ -10,7 +10,7 @@ from asciimatics.event import KeyboardEvent
 from asciimatics.exceptions import NextScene
 from asciimatics.widgets import Frame, Layout, Label, Button, Text, PopUpDialog
 
-from src import GameBoard, LocalSource, GameSource, GAME_BOARD, RemoteSource, BACKEND_URL, LocalAISource
+from src import GameBoard, GameSource, LocalSource, LocalAISource, RemoteSource, GAME_BOARD, BACKEND_URL
 
 DOT_USER = '.user2' if 'SECOND_USER' in os.environ else '.user'
 BOARD: Optional[GameBoard] = None
@@ -70,8 +70,8 @@ class RegisterScreen(Frame):
                     USER = requests.post(BACKEND_URL + '/users/authorize',
                                          json={'id': USER['id'], 'password': USER['password']}).json()
                 except:
-                    self.scene.add_effect(PopUpDialog(self.screen, 'Can\'t authorize. Resetting user data...', ['OK'],
-                                                      on_close=self._reset_user_data))
+                    self.scene.add_effect(PopUpDialog(self.screen, ' Can\'t authorize. Resetting user data... ', ['OK'],
+                                                      on_close=self._reset_user_data, has_shadow=True, theme='chess'))
                     return
 
                 raise NextScene('Main')
@@ -81,7 +81,7 @@ class RegisterScreen(Frame):
 
 class MainScreen(Frame):
     def __init__(self, screen):
-        super().__init__(screen, 8, screen.width - 20)
+        super().__init__(screen, 12, screen.width - 20)
         self.set_theme('chess')
 
         layout = Layout([100])
@@ -93,6 +93,9 @@ class MainScreen(Frame):
         layout.add_widget(Button('locally', self._play_locally))
         layout.add_widget(Button('with AI', self._play_ai))
         layout.add_widget(Button('over network', self._play_network))
+
+        layout.add_widget(Label('\nOther', height=2, align='^'))
+        layout.add_widget(Button('scoreboard', self._scoreboard))
 
         self.fix()
 
@@ -111,9 +114,47 @@ class MainScreen(Frame):
 
         raise NextScene('Board')
 
+    def _scoreboard(self):
+        raise NextScene('Scoreboard')
+
     def update(self, frame_no):
         self.howto_label.text = f'How you want to play today, {USER["username"]}?'
         super(MainScreen, self).update(frame_no)
+
+
+class ScoreboardScreen(Frame):
+    def __init__(self, screen):
+        super(ScoreboardScreen, self).__init__(screen, 15, 65)
+        self.set_theme('chess')
+
+        layout = Layout([100])
+        self.add_layout(layout)
+
+        layout.add_widget(Label('Scoreboard (TOP 10)'))
+
+        self.scoreboard_label = Label('', 12, align='^')
+        layout.add_widget(self.scoreboard_label)
+
+        layout.add_widget(Button('return', on_click=self._return))
+
+        self.counter = 0
+        self.scoreboard = requests.get(BACKEND_URL + '/users/scoreboard').json()
+
+        self.fix()
+
+    def _return(self):
+        raise NextScene('Main')
+
+    def update(self, frame_no):
+        if self.counter >= 10:
+            self.counter = 0
+            self.scoreboard = requests.get(BACKEND_URL + '/users/scoreboard').json()
+        self.counter += 1
+
+        self.scoreboard_label.text = '\n'.join(
+            [f'{player["username"]}: {player["wins"]} wins, {player["looses"]} looses' for player in self.scoreboard])
+
+        super(ScoreboardScreen, self).update(frame_no)
 
 
 class MultiplayerScreen(Frame):
@@ -129,8 +170,9 @@ class MultiplayerScreen(Frame):
         self.id_textbox = Text('>', validator=self._validate_id)
 
         layout.add_widget(self.id_textbox)
-        layout.add_widget(Button('Join', self._join))
-        layout.add_widget(Button('Host', self._host))
+        layout.add_widget(Button('join', self._join))
+        layout.add_widget(Button('host', self._host))
+        layout.add_widget(Button('return', self._return))
 
         self.fix()
 
@@ -150,7 +192,9 @@ class MultiplayerScreen(Frame):
             global BOARD, USER
             BOARD = GameBoard(RemoteSource(USER, False, int(self.id_textbox.value)))
         except:
-            self.scene.add_effect(PopUpDialog(self.screen, 'Can\'t join the game. Check GAME_ID.', ['OK']))
+            self.scene.add_effect(
+                PopUpDialog(self.screen, ' Can\'t join the game. Check GAME_ID. ', ['OK'], has_shadow=True,
+                            theme='chess'))
             return
 
         raise NextScene('Board')
@@ -163,10 +207,15 @@ class MultiplayerScreen(Frame):
             global BOARD, USER
             BOARD = GameBoard(RemoteSource(USER, True, int(self.id_textbox.value)))
         except:
-            self.scene.add_effect(PopUpDialog(self.screen, 'Can\'t host the game. Check USER_ID.', ['OK']))
+            self.scene.add_effect(
+                PopUpDialog(self.screen, ' Can\'t host the game. Check USER_ID. ', ['OK'], has_shadow=True,
+                            theme='chess'))
             return
 
         raise NextScene('Board')
+
+    def _return(self):
+        raise NextScene('Main')
 
 
 class GameScreen(Frame):
@@ -249,7 +298,7 @@ class GameScreen(Frame):
 
         if BOARD.source.get_white_won() is not None:
             self.scene.add_effect(
-                PopUpDialog(self.screen, ('White' if BOARD.source.get_white_won() else 'Black') + ' wins.', ['OK'],
-                            on_close=self._on_game_end))
+                PopUpDialog(self.screen, (' White' if BOARD.source.get_white_won() else ' Black') + ' wins ', ['OK'],
+                            on_close=self._on_game_end, has_shadow=True, theme='chess'))
 
         super(GameScreen, self).update(frame_no)

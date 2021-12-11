@@ -24,3 +24,7 @@ def auth_user(db: Session, auth: schemas.Authorize):
 
 def get_user(db: Session, id: int):
     return db.query(models.User).get(id)
+
+
+def get_users(db: Session):
+    return db.query(models.User).order_by(-models.User.wins).limit(10).all()

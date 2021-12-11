@@ -39,6 +39,12 @@ def authorize(auth: schemas.Authorize, db: Session = Depends(get_db)):
     return crud.auth_user(db, auth)
 
 
+@app.get('/users/scoreboard')
+def scoreboard(db: Session = Depends(get_db)):
+    users = crud.get_users(db)
+    return users
+
+
 @app.post('/games/create')
 def create_game(create: schemas.CreateGame, db: Session = Depends(get_db)):
     if create.creator_id == create.enemy_id:
@@ -81,9 +87,22 @@ def get_game(game: schemas.GetGame, game_id: int):
 
 
 @app.post('/games/{game_id}/move')
-def make_move(move: schemas.MakeMove, game_id: int):
+def make_move(move: schemas.MakeMove, game_id: int, db: Session = Depends(get_db)):
     if GAMES_STORAGE[game_id].source.get_white_won() is not None:
         raise HTTPException(400)
 
     GAMES_STORAGE[game_id].make_move(move.chess_yx, move.move_yx, move.t)
     GAMES_STORAGE[game_id].move_checks(move.move_yx)
+
+    if GAMES_STORAGE[game_id].source.get_white_won() is not None:
+        player1 = crud.get_user(db, GAMES_STORAGE[game_id].source.get_player().id)
+        player2 = crud.get_user(db, GAMES_STORAGE[game_id].source.get_enemy().id)
+
+        if GAMES_STORAGE[game_id].source.get_white_won():
+            player1.wins += 1
+            player2.looses += 1
+        else:
+            player1.looses += 1
+            player2.wins += 1
+
+        db.commit()

@@ -245,6 +245,8 @@ class GameScreen(Frame):
         layout.add_widget(self.current_turn_label, 1)
         layout.add_widget(self.history_label, 1)
 
+        self.ended_games = []
+
         self.fix()
 
     @staticmethod
@@ -296,9 +298,10 @@ class GameScreen(Frame):
         self.move_textbox.readonly = not BOARD.can_move()
         self.title_label.text = BOARD.source.get_title()
 
-        if BOARD.source.get_white_won() is not None:
+        if BOARD.source.get_white_won() is not None and BOARD not in self.ended_games:
             self.scene.add_effect(
                 PopUpDialog(self.screen, (' White' if BOARD.source.get_white_won() else ' Black') + ' wins ', ['OK'],
                             on_close=self._on_game_end, has_shadow=True, theme='chess'))
+            self.ended_games.append(BOARD)
 
         super(GameScreen, self).update(frame_no)

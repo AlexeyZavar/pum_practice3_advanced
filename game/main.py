@@ -20,7 +20,10 @@ def main(screen: Screen):
     ]
     scenes.append(Scene(effects, 40))
 
-    screen.play(scenes, repeat=False)
+    try:
+        screen.play(scenes, repeat=False)
+    except KeyboardInterrupt:
+        exit(0)
 
     screen.clear()
 
@@ -47,7 +50,10 @@ def main(screen: Screen):
         Scene([GameScreen(screen)], -1, name='Board'),
         Scene([MultiplayerScreen(screen)], -1, name='Join'),
     ]
-    screen.play(scenes)
+    try:
+        screen.play(scenes)
+    except KeyboardInterrupt:
+        exit(0)
 
 
 if __name__ == '__main__':

@@ -52,8 +52,8 @@ class GameBoard:
     def check_move(self, chess_yx: str, move_yx: str) -> bool:
         return check_move(self.source.get_field(), self.source.white_turn, chess_yx, move_yx)
 
-    def move_checks(self, piece_yx: str):
-        self.source.move_checks(piece_yx)
+    def move_checks(self, move_yx: str):
+        self.source.move_checks(move_yx)
 
     def can_move(self):
         return self.source.can_move()

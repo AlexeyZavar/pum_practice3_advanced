@@ -113,7 +113,7 @@ class GameSource:
     def make_move(self, piece_yx: str, move_yx: str, t: float):
         raise NotImplementedError()
 
-    def move_checks(self, piece_yx: str):
+    def move_checks(self, move_yx: str):
         raise NotImplementedError()
 
     def can_move(self):
@@ -191,8 +191,15 @@ class LocalSource(GameSource):
 
         self.history.append(f'{chess_yx} → {move_yx} ({round(t, 1):4} s)')
 
-    def move_checks(self, piece_yx: str):
-        y, x = calculate_yx(piece_yx)
+    def move_checks(self, move_yx: str):
+        if not any(BLACK_KING in x for x in self.field):
+            self.white_won = True
+            return
+        if not any(WHITE_KING in x for x in self.field):
+            self.white_won = False
+            return
+
+        y, x = calculate_yx(move_yx)
 
         chess = self.field[y][x]
 
@@ -278,11 +285,20 @@ class LocalAISource(LocalSource):
         moves = _generate_moves(field)
 
         # check if we can eat something
+        possible_eats = []
         for move in moves:
             y, x = calculate_yx(move[1])
             if field[y][x] in WHITE_PIECES:
-                super(LocalAISource, self).make_move(move[0], move[1], time.time() - t1)
-                return
+                possible_eats.append(move)
+
+        if possible_eats:
+            if len(possible_eats) == 1:
+                move = possible_eats[0]
+            else:
+                move = max(possible_eats, key=lambda m: abs(get_chess_value(self.field, int(m[1][0]), int(m[1][1]))))
+
+            super(LocalAISource, self).make_move(move[0], move[1], time.time() - t1)
+            return
 
         best_move = -9999
         best_move_found = None
@@ -402,7 +418,7 @@ class RemoteSource(GameSource):
         })
         self.update()
 
-    def move_checks(self, piece_yx: str):  # already checked on the server
+    def move_checks(self, move_yx: str):  # already checked on the server
         pass
 
     def can_move(self):

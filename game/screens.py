@@ -91,8 +91,8 @@ class RegisterScreen(Frame):
                     USER = requests.post(BACKEND_URL + '/users/authorize',
                                          json={'id': USER['id'], 'password': USER['password']}).json()
                 except:
-                    self.scene.add_effect(PopUpDialog(self.screen, ' Can\'t authorize. Resetting user data... ', ['OK'],
-                                                      on_close=self._reset_user_data, has_shadow=True, theme='chess'))
+                    self.add_effect(PopUpDialog(self.screen, ' Can\'t authorize. Resetting user data... ', ['OK'],
+                                                on_close=self._reset_user_data, has_shadow=True, theme='chess'))
                     return
 
                 raise NextScene('Main')
@@ -102,7 +102,7 @@ class RegisterScreen(Frame):
 
 class MainScreen(Frame):
     def __init__(self, screen):
-        super().__init__(screen, 14, screen.width - 20)
+        super().__init__(screen, 14, screen.width // 2)
         self.set_theme('chess')
 
         layout = Layout([100])
@@ -141,6 +141,12 @@ class MainScreen(Frame):
 
     def update(self, frame_no):
         self.howto_label.text = f'\nHow you want to play today, {USER["username"]}?'
+
+        if frame_no % 40 == 0 or frame_no == 1:
+            self.add_effect(StarFirework(self.screen, self.screen.width // 2, 4, 40))
+            self.add_effect(StarFirework(self.screen, self.screen.width // 2 - 30, 10, 40))
+            self.add_effect(StarFirework(self.screen, self.screen.width // 2 + 30, 10, 40))
+
         super(MainScreen, self).update(frame_no)
 
 
@@ -159,7 +165,6 @@ class ScoreboardScreen(Frame):
 
         layout.add_widget(Button('return', self._return))
 
-        self.counter = 0
         self.scoreboard = []
 
         self._fetch()
@@ -177,9 +182,7 @@ class ScoreboardScreen(Frame):
             pass
 
     def update(self, frame_no):
-        if self.counter >= 10:
-            self.counter = 0
-
+        if frame_no == 1 or frame_no % 10 == 0:
             self.add_effect(StarFirework(self.screen, self.screen.width // 2 - 35, self.screen.height // 2, 20))
             self.add_effect(StarFirework(self.screen, self.screen.width // 2 + 35, self.screen.height // 2, 20))
 
@@ -188,7 +191,8 @@ class ScoreboardScreen(Frame):
 
             self._fetch()
 
-        self.counter += 1
+        if frame_no % 20 == 0:
+            self.add_effect(StarFirework(self.screen, self.screen.width // 2, 4, 20))
 
         self.scoreboard_label.text = '\n'.join(
             [f'{player["username"]}: {player["wins"]} wins, {player["looses"]} looses' for player in self.scoreboard])
@@ -287,9 +291,8 @@ class GameScreen(Frame):
         self.tip_label = Label('', 4)
         layout.add_widget(self.tip_label, 1)
 
-        layout.add_widget(Button('leave', self._leave), 1)
+        layout.add_widget(Button('return', self._leave), 1)
 
-        self.tip_counter = 99
         self.ended_games = []
 
         self.fix()
@@ -353,23 +356,19 @@ class GameScreen(Frame):
                 if isinstance(eff, ParticleEffect):
                     self.scene.remove_effect(eff)
 
-            self.scene.add_effect(Rain(self.screen, 30))
+            self.add_effect(Rain(self.screen, 30))
 
             self.turn_start = time.time()
             BOARD.reset_timer = False
 
         # next tip
-        if self.tip_counter >= 100:
-            self.tip_counter = 0
+        if frame_no % 100 == 0:
             self.tip_label.text = 'TIP: ' + random.choice(TIPS)
-
-        self.tip_counter += 1
 
         # do not update game
         if BOARD in self.ended_games:
             self.turn_start = time.time()
             self.tip_label.text = ''
-            self.tip_counter = 0
         else:
             self.board_label.text = BOARD.get_field()
 
@@ -385,8 +384,8 @@ class GameScreen(Frame):
                 PopUpDialog(self.screen, (' White' if BOARD.source.get_white_won() else ' Black') + ' wins ', ['OK'],
                             on_close=self._on_game_end, has_shadow=True, theme='chess'))
 
-            self.scene.add_effect(StarFirework(self.screen, self.screen.width // 2 - 20, self.screen.height // 2, 40))
-            self.scene.add_effect(StarFirework(self.screen, self.screen.width // 2 + 20, self.screen.height // 2, 40))
+            self.add_effect(StarFirework(self.screen, self.screen.width // 2 - 20, self.screen.height // 2, 40))
+            self.add_effect(StarFirework(self.screen, self.screen.width // 2 + 20, self.screen.height // 2, 40))
 
             self.ended_games.append(BOARD)
 

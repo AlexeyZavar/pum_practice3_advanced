@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from asciimatics.effects import Print
+from asciimatics.particles import StarFirework
 from asciimatics.renderers import FigletText, Fire
 from asciimatics.scene import Scene
 from asciimatics.screen import Screen
@@ -14,8 +15,14 @@ def main(screen: Screen):
 
     az = FigletText('Chess by AlexeyZavar', 'banner3')
     fire = Fire(screen.height, screen.width // 2, '*' * 70, 0.6, 60, screen.colours, screen.colours >= 256)
+    firework1 = StarFirework(screen, screen.width // 2 - 35, screen.height // 2 - 20, 40)
+    firework2 = StarFirework(screen, screen.width // 2 + 35, screen.height // 2 - 20, 40)
+    firework3 = StarFirework(screen, screen.width // 2 - 45, screen.height // 2 - 12, 40)
+    firework4 = StarFirework(screen, screen.width // 2 + 45, screen.height // 2 - 12, 40)
+
     effects = [
         Print(screen, fire, 0, speed=0.5, transparent=False),
+        firework1, firework2, firework3, firework4,
         Print(screen, az, (screen.height - 4) // 2, speed=1),
     ]
     scenes.append(Scene(effects, 40))

@@ -1,5 +1,6 @@
 import json
 import os.path
+import random
 import re
 import time
 from math import floor
@@ -12,6 +13,25 @@ from asciimatics.particles import StarFirework, Rain, ParticleEffect
 from asciimatics.widgets import Frame, Layout, Label, Button, Text, PopUpDialog
 
 from src import GameBoard, GameSource, LocalSource, LocalAISource, RemoteSource, GAME_BOARD, BACKEND_URL
+
+TIPS = [
+    'LEARN THE MOVES',
+    'OPEN WITH A PAWN',
+    'GET THE KNIGHTS AND BISHOPS OUT',
+    'WATCH YOUR BACK!',
+    'DON\'T WASTE TIME',
+    '“CASTLE” EARLY',
+    'ATTACK IN THE “MIDDLEGAME”',
+    'LOSE PIECES WISELY',
+    'DON\'T PLAY TOO FAST',
+    'WIN THE ENDGAME',
+    'HAVE A PLAN',
+    'KEEP YOUR KING SAFE',
+    'CONTROL THE CENTER',
+    'ALWAYS BE ALERT',
+    'BE PATIENT',
+    'BE STRATEGIC'
+]
 
 DOT_USER = '.user2' if 'SECOND_USER' in os.environ else '.user'
 BOARD: Optional[GameBoard] = None
@@ -157,6 +177,8 @@ class ScoreboardScreen(Frame):
 
     def update(self, frame_no):
         if self.counter >= 10:
+            self.counter = 0
+
             self.add_effect(StarFirework(self.screen, self.screen.width // 2 - 35, self.screen.height // 2, 20))
             self.add_effect(StarFirework(self.screen, self.screen.width // 2 + 35, self.screen.height // 2, 20))
 
@@ -164,7 +186,6 @@ class ScoreboardScreen(Frame):
             self.add_effect(StarFirework(self.screen, self.screen.width // 2 + 45, self.screen.height // 2 - 15, 20))
 
             self._fetch()
-            self.counter = 0
 
         self.counter += 1
 
@@ -256,12 +277,16 @@ class GameScreen(Frame):
 
         self.turn_duration_label = Label('', 1)
         self.current_turn_label = Label('', 1)
-        self.history_label = Label('', 8)
+        self.history_label = Label('', 12)
 
         layout.add_widget(self.turn_duration_label, 1)
         layout.add_widget(self.current_turn_label, 1)
         layout.add_widget(self.history_label, 1)
 
+        self.tip_label = Label('')
+        layout.add_widget(self.tip_label, 1)
+
+        self.tip_counter = 99
         self.ended_games = []
 
         self.fix()
@@ -313,8 +338,16 @@ class GameScreen(Frame):
             self.turn_start = time.time()
             BOARD.reset_timer = False
 
+        if self.tip_counter >= 100:
+            self.tip_counter = 0
+            self.tip_label.text = 'TIP: ' + random.choice(TIPS)
+
+        self.tip_counter += 1
+
         if BOARD in self.ended_games:
             self.turn_start = time.time()
+            self.tip_label.text = ''
+            self.tip_counter = 0
 
         self.board_label.text = BOARD.get_field()
 

@@ -394,10 +394,10 @@ class RemoteSource(GameSource):
 
     def get_field(self) -> List[List[str]]:
         if self.update_counter >= 10:
-            self.update()
             self.update_counter = 0
-        else:
-            self.update_counter += 1
+            self.update()
+
+        self.update_counter += 1
 
         return self.data['field']
 

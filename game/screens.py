@@ -102,21 +102,22 @@ class RegisterScreen(Frame):
 
 class MainScreen(Frame):
     def __init__(self, screen):
-        super().__init__(screen, 12, screen.width - 20)
+        super().__init__(screen, 14, screen.width - 20)
         self.set_theme('chess')
 
         layout = Layout([100])
         self.add_layout(layout)
 
-        self.howto_label = Label('', height=2, align='^')
+        self.howto_label = Label('', height=3, align='^')
 
         layout.add_widget(self.howto_label)
         layout.add_widget(Button('locally', self._play_locally))
         layout.add_widget(Button('with AI', self._play_ai))
         layout.add_widget(Button('over network', self._play_network))
 
-        layout.add_widget(Label('\nOther', height=2, align='^'))
+        layout.add_widget(Label('\nOther', height=3, align='^'))
         layout.add_widget(Button('scoreboard', self._scoreboard))
+        layout.add_widget(Button('exit', exit))
 
         self.fix()
 
@@ -139,7 +140,7 @@ class MainScreen(Frame):
         raise NextScene('Scoreboard')
 
     def update(self, frame_no):
-        self.howto_label.text = f'How you want to play today, {USER["username"]}?'
+        self.howto_label.text = f'\nHow you want to play today, {USER["username"]}?'
         super(MainScreen, self).update(frame_no)
 
 
@@ -156,7 +157,7 @@ class ScoreboardScreen(Frame):
         self.scoreboard_label = Label('', 12, align='^')
         layout.add_widget(self.scoreboard_label)
 
-        layout.add_widget(Button('return', on_click=self._return))
+        layout.add_widget(Button('return', self._return))
 
         self.counter = 0
         self.scoreboard = []
@@ -283,8 +284,10 @@ class GameScreen(Frame):
         layout.add_widget(self.current_turn_label, 1)
         layout.add_widget(self.history_label, 1)
 
-        self.tip_label = Label('')
+        self.tip_label = Label('', 4)
         layout.add_widget(self.tip_label, 1)
+
+        layout.add_widget(Button('leave', self._leave), 1)
 
         self.tip_counter = 99
         self.ended_games = []
@@ -317,6 +320,22 @@ class GameScreen(Frame):
 
         self.turn_start = time.time()
 
+    def _leave(self):
+        text = 'Do you want to leave the game?'
+        if isinstance(BOARD.source, RemoteSource):
+            text += ' The game won\'t end, you can rejoin later.'
+
+        text = f' {text} '
+
+        self.scene.add_effect(
+            PopUpDialog(self.screen, text, ['YES', 'NO'], on_close=self._leave_confirm, has_shadow=True, theme='chess'))
+
+    def _leave_confirm(self, btn):
+        if btn == 1:
+            return
+
+        raise NextScene('Main')
+
     def process_event(self, event):
         if event is not None and isinstance(event, KeyboardEvent) and event.key_code == 13:
             self._make_move()
@@ -328,6 +347,7 @@ class GameScreen(Frame):
         raise NextScene('Main')
 
     def update(self, frame_no):
+        # if we start a new game
         if BOARD not in self.ended_games and (BOARD.reset_timer or not BOARD.can_move()):
             for eff in self.scene.effects:
                 if isinstance(eff, ParticleEffect):
@@ -338,18 +358,20 @@ class GameScreen(Frame):
             self.turn_start = time.time()
             BOARD.reset_timer = False
 
+        # next tip
         if self.tip_counter >= 100:
             self.tip_counter = 0
             self.tip_label.text = 'TIP: ' + random.choice(TIPS)
 
         self.tip_counter += 1
 
+        # do not update game
         if BOARD in self.ended_games:
             self.turn_start = time.time()
             self.tip_label.text = ''
             self.tip_counter = 0
-
-        self.board_label.text = BOARD.get_field()
+        else:
+            self.board_label.text = BOARD.get_field()
 
         self.current_turn_label.text = 'Current turn: ' + ('WHITE' if BOARD.source.white_turn else 'BLACK')
         self.history_label.text = '\n'.join(BOARD.source.get_history())
@@ -357,6 +379,7 @@ class GameScreen(Frame):
         self.move_textbox.readonly = not BOARD.can_move()
         self.title_label.text = BOARD.source.get_title()
 
+        # if someone has won
         if BOARD.source.get_white_won() is not None and BOARD not in self.ended_games:
             self.scene.add_effect(
                 PopUpDialog(self.screen, (' White' if BOARD.source.get_white_won() else ' Black') + ' wins ', ['OK'],

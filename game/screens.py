@@ -8,6 +8,7 @@ from typing import Optional, Dict
 import requests
 from asciimatics.event import KeyboardEvent
 from asciimatics.exceptions import NextScene
+from asciimatics.particles import StarFirework, Rain, ParticleEffect
 from asciimatics.widgets import Frame, Layout, Label, Button, Text, PopUpDialog
 
 from src import GameBoard, GameSource, LocalSource, LocalAISource, RemoteSource, GAME_BOARD, BACKEND_URL
@@ -124,13 +125,13 @@ class MainScreen(Frame):
 
 class ScoreboardScreen(Frame):
     def __init__(self, screen):
-        super(ScoreboardScreen, self).__init__(screen, 15, 65)
+        super(ScoreboardScreen, self).__init__(screen, 21, 65)
         self.set_theme('chess')
 
         layout = Layout([100])
         self.add_layout(layout)
 
-        layout.add_widget(Label('Scoreboard (TOP 10)'))
+        layout.add_widget(Label('Scoreboard (TOP 10)', height=2, align='^'))
 
         self.scoreboard_label = Label('', 12, align='^')
         layout.add_widget(self.scoreboard_label)
@@ -138,17 +139,33 @@ class ScoreboardScreen(Frame):
         layout.add_widget(Button('return', on_click=self._return))
 
         self.counter = 0
-        self.scoreboard = requests.get(BACKEND_URL + '/users/scoreboard').json()
+        self.scoreboard = []
+
+        self._fetch()
 
         self.fix()
 
     def _return(self):
         raise NextScene('Main')
 
+    def _fetch(self):
+        try:
+            self.scoreboard = requests.get(BACKEND_URL + '/users/scoreboard').json()
+        except:
+            self.scoreboard = [{'username': 'Can\'t fetch data', 'wins': -1, 'looses': -1}]
+            pass
+
     def update(self, frame_no):
         if self.counter >= 10:
+            self.add_effect(StarFirework(self.screen, self.screen.width // 2 - 35, self.screen.height // 2, 20))
+            self.add_effect(StarFirework(self.screen, self.screen.width // 2 + 35, self.screen.height // 2, 20))
+
+            self.add_effect(StarFirework(self.screen, self.screen.width // 2 - 45, self.screen.height // 2 - 15, 20))
+            self.add_effect(StarFirework(self.screen, self.screen.width // 2 + 45, self.screen.height // 2 - 15, 20))
+
+            self._fetch()
             self.counter = 0
-            self.scoreboard = requests.get(BACKEND_URL + '/users/scoreboard').json()
+
         self.counter += 1
 
         self.scoreboard_label.text = '\n'.join(
@@ -286,9 +303,18 @@ class GameScreen(Frame):
         raise NextScene('Main')
 
     def update(self, frame_no):
-        if BOARD.reset_timer or not BOARD.can_move():
+        if BOARD not in self.ended_games and (BOARD.reset_timer or not BOARD.can_move()):
+            for eff in self.scene.effects:
+                if isinstance(eff, ParticleEffect):
+                    self.scene.remove_effect(eff)
+
+            self.scene.add_effect(Rain(self.screen, 30))
+
             self.turn_start = time.time()
             BOARD.reset_timer = False
+
+        if BOARD in self.ended_games:
+            self.turn_start = time.time()
 
         self.board_label.text = BOARD.get_field()
 
@@ -302,6 +328,10 @@ class GameScreen(Frame):
             self.scene.add_effect(
                 PopUpDialog(self.screen, (' White' if BOARD.source.get_white_won() else ' Black') + ' wins ', ['OK'],
                             on_close=self._on_game_end, has_shadow=True, theme='chess'))
+
+            self.scene.add_effect(StarFirework(self.screen, self.screen.width // 2 - 20, self.screen.height // 2, 40))
+            self.scene.add_effect(StarFirework(self.screen, self.screen.width // 2 + 20, self.screen.height // 2, 40))
+
             self.ended_games.append(BOARD)
 
         super(GameScreen, self).update(frame_no)

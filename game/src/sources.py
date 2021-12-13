@@ -123,6 +123,17 @@ class GameSource:
         raise NotImplementedError()
 
 
+def king_eatable(field: List[List[str]], king_yx, white_turn: bool):
+    # generate moves for opponent
+    moves = generate_moves(field, not white_turn)
+
+    for move in moves:
+        if move[1] == king_yx:
+            return True
+
+    return False
+
+
 class LocalSource(GameSource):
     def __init__(self, player1=None, player2=None):
         super().__init__()
@@ -208,13 +219,32 @@ class LocalSource(GameSource):
         if chess == BLACK_PAWN and y == 0:
             self.field[y][x] = BLACK_QUEEN
 
-        # check for checkmate
-        moves = _generate_moves(self.field, not self.white_turn)
+        # find king on the board
+        king_yx = None
+        for y in range(len(self.field)):
+            for x in range(len(self.field[y])):
+                if self.field[y][x] == (WHITE_KING if self.white_turn else BLACK_KING):
+                    king_yx = f'{y}{x}'
+                    break
 
-        for move in moves:
-            y, x = calculate_yx(move[1])
-            if self.field[y][x] == (WHITE_KING if self.white_turn else BLACK_KING):
-                self.white_won = not self.white_turn
+        #
+        # Checkmate
+        #
+        if king_eatable(self.field, king_yx, self.white_turn):
+            moves = generate_moves(self.field, not self.white_turn)
+
+            # filter king moves
+            king_moves = filter(lambda x: x[0] == king_yx, moves)
+
+            # check if king can escape
+            for move in king_moves:
+                virtual_move(self.field, *move)
+                if not king_eatable(self.field, move[1], self.white_turn):
+                    return
+                virtual_move(self.field, *reversed(move))
+
+            # king fucked up
+            self.white_won = not self.white_turn
 
     def can_move(self):
         return self.get_white_won() is None
@@ -243,7 +273,7 @@ def get_chess_value(field, y, x):
     return value if field[y][x] in WHITE_PIECES else -value
 
 
-def _generate_moves(field: List[List[str]], white_turn: bool = False):
+def generate_moves(field: List[List[str]], white_turn: bool = False):
     from .gameboard import check_move
     moves = []
 
@@ -263,6 +293,14 @@ def _generate_moves(field: List[List[str]], white_turn: bool = False):
     return moves
 
 
+def virtual_move(field: List[List[str]], chess_yx, move_yx):
+    piece_y, piece_x = calculate_yx(chess_yx)
+    move_y, move_x = calculate_yx(move_yx)
+
+    field[move_y][move_x] = field[piece_y][piece_x]
+    field[piece_y][piece_x] = ' '
+
+
 class LocalAISource(LocalSource):
     def __init__(self, username: str):
         super().__init__(Player(-1, username), Player(-1, 'AI'))
@@ -274,15 +312,8 @@ class LocalAISource(LocalSource):
         t1 = time.time()
         field = deepcopy(self.field)
 
-        def virtual_move(chess_yx, move_yx):
-            piece_y, piece_x = calculate_yx(chess_yx)
-            move_y, move_x = calculate_yx(move_yx)
-
-            field[move_y][move_x] = field[piece_y][piece_x]
-            field[piece_y][piece_x] = ' '
-
         is_maximising_player = True
-        moves = _generate_moves(field)
+        moves = generate_moves(field)
 
         # check if we can eat something
         possible_eats = []
@@ -304,9 +335,9 @@ class LocalAISource(LocalSource):
         best_move_found = None
 
         for move in moves:
-            virtual_move(*move)
+            virtual_move(field, *move)
             value = self._minimax(field, AI_DEPTH - 1, -10000, 10000, not is_maximising_player)
-            virtual_move(*reversed(move))
+            virtual_move(field, *reversed(move))
 
             if value >= best_move:
                 best_move = value
@@ -321,21 +352,14 @@ class LocalAISource(LocalSource):
         if depth == 0:
             return -self.evaluate_board(field)
 
-        def virtual_move(chess_yx, move_yx):
-            piece_y, piece_x = calculate_yx(chess_yx)
-            move_y, move_x = calculate_yx(move_yx)
-
-            field[move_y][move_x] = field[piece_y][piece_x]
-            field[piece_y][piece_x] = ' '
-
-        moves = _generate_moves(field)
+        moves = generate_moves(field)
 
         if is_maximising_player:
             best_move = -9999
             for move in moves:
-                virtual_move(*move)
+                virtual_move(field, *move)
                 best_move = max(best_move, self._minimax(field, depth - 1, alpha, beta, not is_maximising_player))
-                virtual_move(*reversed(move))
+                virtual_move(field, *reversed(move))
                 alpha = max(alpha, best_move)
                 if beta <= alpha:
                     return best_move
@@ -344,9 +368,9 @@ class LocalAISource(LocalSource):
         else:
             best_move = 9999
             for move in moves:
-                virtual_move(*move)
+                virtual_move(field, *move)
                 best_move = min(best_move, self._minimax(field, depth - 1, alpha, beta, not is_maximising_player))
-                virtual_move(*reversed(move))
+                virtual_move(field, *reversed(move))
                 alpha = min(alpha, best_move)
                 if beta <= alpha:
                     return best_move

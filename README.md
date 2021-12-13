@@ -58,23 +58,23 @@ Main and game frames
 
 > .user & .user2
 
-User data (to change user, set 'SECOND_USER' env variable).
+User data (to change user, set '**SECOND_USER**' env variable).
 
 > consts.py
 
-Backend url and symbols for game.
+Backend URL and symbols for game.
 
 > gameboard.py
 
-Proxy between a screen and game source. Contains all checks for pieces.
+Proxy between a screen and game source. Contains move checks for pieces.
 
 > sources.py
 
-Games sources:
+Game sources:
 
 - **LocalSource** (PvP on the computer)
 - **LocalAISource** (PvE on the computer)
-- **RemoteSource** (PvP on remote)
+- **RemoteSource** (PvP using backend)
 
 Contains all **alpha-beta pruning** related functions and arrays.
 

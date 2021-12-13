@@ -362,7 +362,7 @@ class GameScreen(Frame):
             BOARD.reset_timer = False
 
         # next tip
-        if frame_no % 100 == 0:
+        if frame_no == 1 or frame_no % 100 == 0:
             self.tip_label.text = 'TIP: ' + random.choice(TIPS)
 
         # do not update game

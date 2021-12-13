@@ -364,8 +364,10 @@ class GameScreen(Frame):
         # next tip
         if frame_no == 1 or frame_no % 100 == 0:
             self.tip_label.text = 'TIP: ' + random.choice(TIPS)
+            self.scene.add_effect(
+                StarFirework(self.screen, self.screen.width // 4 * 3, self.screen.height // 3 * 2, 40))
 
-        # do not update game
+        # do not update game if it ended
         if BOARD in self.ended_games:
             self.turn_start = time.time()
             self.tip_label.text = ''

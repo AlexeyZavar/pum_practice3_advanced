@@ -2,6 +2,7 @@ import json
 import os.path
 import random
 import re
+import sys
 import time
 from math import floor
 from typing import Optional, Dict
@@ -73,12 +74,12 @@ class RegisterScreen(Frame):
             self._register()
             event = None
 
-        return super(RegisterScreen, self).process_event(event)
+        return super().process_event(event)
 
     @staticmethod
     def _reset_user_data():
         os.remove(DOT_USER)
-        exit(-1)
+        sys.exit(-1)
 
     def update(self, frame_no):
         if os.path.isfile(DOT_USER):
@@ -97,7 +98,7 @@ class RegisterScreen(Frame):
 
                 raise NextScene('Main')
 
-        super(RegisterScreen, self).update(frame_no)
+        super().update(frame_no)
 
 
 class MainScreen(Frame):
@@ -117,7 +118,7 @@ class MainScreen(Frame):
 
         layout.add_widget(Label('\nOther', height=3, align='^'))
         layout.add_widget(Button('scoreboard', self._scoreboard))
-        layout.add_widget(Button('exit', exit))
+        layout.add_widget(Button('exit', sys.exit))
 
         self.fix()
 
@@ -147,12 +148,12 @@ class MainScreen(Frame):
             self.add_effect(StarFirework(self.screen, self.screen.width // 2 - 30, 10, 40))
             self.add_effect(StarFirework(self.screen, self.screen.width // 2 + 30, 10, 40))
 
-        super(MainScreen, self).update(frame_no)
+        super().update(frame_no)
 
 
 class ScoreboardScreen(Frame):
     def __init__(self, screen):
-        super(ScoreboardScreen, self).__init__(screen, 21, 65)
+        super().__init__(screen, 21, 65)
         self.set_theme('chess')
 
         layout = Layout([100])
@@ -179,7 +180,6 @@ class ScoreboardScreen(Frame):
             self.scoreboard = requests.get(BACKEND_URL + '/users/scoreboard').json()
         except:
             self.scoreboard = [{'username': 'Can\'t fetch data', 'wins': -1, 'looses': -1}]
-            pass
 
     def update(self, frame_no):
         if frame_no == 1 or frame_no % 10 == 0:
@@ -197,7 +197,7 @@ class ScoreboardScreen(Frame):
         self.scoreboard_label.text = '\n'.join(
             [f'{player["username"]}: {player["wins"]} wins, {player["looses"]} looses' for player in self.scoreboard])
 
-        super(ScoreboardScreen, self).update(frame_no)
+        super().update(frame_no)
 
 
 class MultiplayerScreen(Frame):
@@ -211,8 +211,8 @@ class MultiplayerScreen(Frame):
         layout.add_widget(Label('Enter GAME_ID to join or ENEMY_ID to host a game.'))
 
         self.id_textbox = Text('>', validator=self._validate_id)
-
         layout.add_widget(self.id_textbox)
+
         layout.add_widget(Button('join', self._join))
         layout.add_widget(Button('host', self._host))
         layout.add_widget(Button('return', self._return))
@@ -263,7 +263,7 @@ class MultiplayerScreen(Frame):
 
 class GameScreen(Frame):
     def __init__(self, screen):
-        super(GameScreen, self).__init__(screen, screen.height - 8, screen.width - 20)
+        super().__init__(screen, screen.height - 8, screen.width - 20)
         self.set_theme('chess')
 
         self.turn_start = time.time()
@@ -339,15 +339,15 @@ class GameScreen(Frame):
 
         raise NextScene('Main')
 
+    def _on_game_end(self, _):
+        raise NextScene('Main')
+
     def process_event(self, event):
         if event is not None and isinstance(event, KeyboardEvent) and event.key_code == 13:
             self._make_move()
             event = None
 
-        return super(GameScreen, self).process_event(event)
-
-    def _on_game_end(self, _):
-        raise NextScene('Main')
+        return super().process_event(event)
 
     def update(self, frame_no):
         # if we start a new game
@@ -380,7 +380,7 @@ class GameScreen(Frame):
         self.move_textbox.readonly = not BOARD.can_move()
         self.title_label.text = BOARD.source.get_title()
 
-        # if someone has won
+        # if someone won
         if BOARD.source.get_white_won() is not None and BOARD not in self.ended_games:
             self.scene.add_effect(
                 PopUpDialog(self.screen, (' White' if BOARD.source.get_white_won() else ' Black') + ' wins ', ['OK'],
@@ -391,4 +391,4 @@ class GameScreen(Frame):
 
             self.ended_games.append(BOARD)
 
-        super(GameScreen, self).update(frame_no)
+        super().update(frame_no)

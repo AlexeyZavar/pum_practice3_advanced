@@ -1,5 +1,5 @@
 import time
-from copy import copy, deepcopy
+from copy import deepcopy
 from typing import List, Dict
 
 import requests
@@ -9,6 +9,10 @@ from .utils import calculate_yx, alphabet
 
 AI_DEPTH = 2
 
+
+#
+# Alpha-beta pruning
+#
 
 def reverse(data: List):
     return list(reversed(deepcopy(data)))
@@ -36,6 +40,7 @@ KNIGHT_EVAL = [
     [-4.0, -2.0, 0.0, 0.5, 0.5, 0.0, -2.0, -4.0],
     [-5.0, -4.0, -3.0, -3.0, -3.0, -3.0, -4.0, -5.0]
 ]
+
 BISHOP_EVAL_WHITE = [
     [-2.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -2.0],
     [-1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, -1.0],
@@ -171,7 +176,7 @@ class LocalSource(GameSource):
         return self.player2
 
     def get_history(self):
-        history = copy(self.history)[-8:][::-1]
+        history = deepcopy(self.history)[-8:][::-1]
         if len(history) < 8:
             history += ['.'] * (8 - len(history))
 

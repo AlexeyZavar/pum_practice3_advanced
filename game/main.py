@@ -1,3 +1,4 @@
+import sys
 from collections import defaultdict
 
 from asciimatics.effects import Print
@@ -30,7 +31,7 @@ def main(screen: Screen):
     try:
         screen.play(scenes, repeat=False)
     except KeyboardInterrupt:
-        exit(0)
+        sys.exit(0)
 
     screen.clear()
 

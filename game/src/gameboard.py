@@ -1,7 +1,6 @@
 from typing import List
 
 from .consts import *
-from .consts import WHITE_PIECES
 from .sources import GameSource
 from .utils import calculate_yx
 

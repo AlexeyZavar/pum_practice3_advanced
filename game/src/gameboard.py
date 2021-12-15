@@ -1,7 +1,8 @@
+from copy import deepcopy
 from typing import List
 
 from .consts import *
-from .sources import GameSource
+from .sources import GameSource, generate_moves
 from .utils import calculate_yx
 
 GAME_BOARD = '''
@@ -11,21 +12,21 @@ GAME_BOARD = '''
 
 
   ┌───┬───┬───┬───┬───┬───┬───┬───┐
-8 │ %s │ %s │ %s │ %s │ %s │ %s │ %s │ %s │
+8 │{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│
   ├───┼───┼───┼───┼───┼───┼───┼───┤
-7 │ %s │ %s │ %s │ %s │ %s │ %s │ %s │ %s │
+7 │{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│
   ├───┼───┼───┼───┼───┼───┼───┼───┤
-6 │ %s │ %s │ %s │ %s │ %s │ %s │ %s │ %s │
+6 │{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│
   ├───┼───┼───┼───┼───┼───┼───┼───┤
-5 │ %s │ %s │ %s │ %s │ %s │ %s │ %s │ %s │
+5 │{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│
   ├───┼───┼───┼───┼───┼───┼───┼───┤
-4 │ %s │ %s │ %s │ %s │ %s │ %s │ %s │ %s │
+4 │{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│
   ├───┼───┼───┼───┼───┼───┼───┼───┤
-3 │ %s │ %s │ %s │ %s │ %s │ %s │ %s │ %s │
+3 │{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│
   ├───┼───┼───┼───┼───┼───┼───┼───┤
-2 │ %s │ %s │ %s │ %s │ %s │ %s │ %s │ %s │
+2 │{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│
   ├───┼───┼───┼───┼───┼───┼───┼───┤
-1 │ %s │ %s │ %s │ %s │ %s │ %s │ %s │ %s │
+1 │{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│{:^3}│
   └───┴───┴───┴───┴───┴───┴───┴───┘
  A   B   C   D   E   F   G   H
 
@@ -41,9 +42,25 @@ class GameBoard:
         self.source.board = self
         self.reset_timer = True
 
-    def get_field(self) -> str:
-        flatten = [item for sublist in self.source.get_field() for item in sublist]
-        return GAME_BOARD % tuple(flatten)
+    def get_field(self, highlight: str = None) -> str:
+        field = deepcopy(self.source.get_field())
+        field2 = deepcopy(field)
+
+        if highlight is not None:
+            y, x = calculate_yx(highlight[:2])
+            field[y][x] = HIGHLIGHT + field[y][x] + HIGHLIGHT
+
+            moves = generate_moves(field2, self.source.white_turn)
+            for move in filter(lambda s: s[0] == f'{y}{x}', moves):
+                move_y, move_x = calculate_yx(move[1])
+                field[move_y][move_x] = HIGHLIGHT + field[move_y][move_x] + HIGHLIGHT
+
+            if len(highlight) == 5:
+                move_y, move_x = calculate_yx(highlight[3:5])
+                field[move_y][move_x] = HIGHLIGHT * 3
+
+        flatten = [item for sublist in field for item in sublist]
+        return GAME_BOARD.format(*flatten)
 
     def make_move(self, chess_yx: str, move_yx: str, t: float):
         self.source.make_move(chess_yx, move_yx, t)

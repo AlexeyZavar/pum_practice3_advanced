@@ -13,7 +13,7 @@ from asciimatics.exceptions import NextScene
 from asciimatics.particles import StarFirework, Rain, ParticleEffect
 from asciimatics.widgets import Frame, Layout, Label, Button, Text, PopUpDialog
 
-from src import GameBoard, GameSource, LocalSource, LocalAISource, RemoteSource, GAME_BOARD, BACKEND_URL
+from src import calculate_yx, GameBoard, GameSource, LocalSource, LocalAISource, RemoteSource, GAME_BOARD, BACKEND_URL
 
 TIPS = [
     'LEARN THE MOVES',
@@ -372,7 +372,16 @@ class GameScreen(Frame):
             self.turn_start = time.time()
             self.tip_label.text = ''
         else:
-            self.board_label.text = BOARD.get_field()
+
+            if len(self.move_textbox.value) >= 2:
+                try:
+                    y, x = calculate_yx(self.move_textbox.value[:2])
+                    if y in range(8) and x in range(8):
+                        self.board_label.text = BOARD.get_field(self.move_textbox.value)
+                except:
+                    self.board_label.text = BOARD.get_field()
+            else:
+                self.board_label.text = BOARD.get_field()
 
         self.current_turn_label.text = 'Current turn: ' + ('WHITE' if BOARD.source.white_turn else 'BLACK')
         self.history_label.text = '\n'.join(BOARD.source.get_history())
